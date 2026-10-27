@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f2">
+  <meta name="description" content="Turn class notes into focused summaries, flashcards, and quizzes with StudyKit AI.">
+  <title>StudyKit — Make your notes stick</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="StudyKit home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>study<span class="brand-light">kit</span></span><span class="brand-ai">AI</span></a>
+      <div class="topbar-right"><span class="local-status"><span class="status-dot"></span> Your notes stay yours</span><button class="help-button" id="privacyButton" type="button" aria-label="Privacy details">?</button></div>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR PERSONAL STUDY STUDIO</div>
+          <h1>Make your notes<br><span>stick.</span></h1>
+          <p>Bring the rough notes. Leave with a clear summary, quick recall cards, and a quiz that checks what you actually know.</p>
+          <div class="hero-foot"><span class="sparkle">✳</span> One set of notes. A better way to review.</div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-paper paper-back"><span class="paper-dot"></span><span class="paper-line"></span><span class="paper-line short"></span><span class="paper-line"></span></div><div class="art-paper paper-front"><span class="paper-label">TODAY'S FOCUS</span><strong>Understand<br>the idea.</strong><span class="paper-highlight">then remember it</span><span class="paper-footer"><span>01 / 04</span><span>↗</span></span></div><div class="art-stamp">LEARN<br>YOUR WAY</div><div class="art-star">✳</div></div>
+      </section>
+      <section class="workspace" aria-label="StudyKit workspace">
+        <div class="composer card">
+          <div class="section-heading"><div><span class="step-label">01 / YOUR MATERIAL</span><h2>Start with your notes</h2></div><button class="text-button" id="sampleButton" type="button">Try sample notes <span>↗</span></button></div>
+          <label class="sr-only" for="notes">Paste your study notes</label>
+          <textarea id="notes" placeholder="Paste class notes, textbook highlights, or a topic you want to learn…" maxlength="18000"></textarea>
+          <div class="input-meta"><span id="noteHint">Your notes are sent only when you ask for a study kit.</span><span><span id="charCount">0</span> / 18,000</span></div>
+          <div class="composer-bottom"><label class="level-label" for="level">Explain at</label><select id="level" aria-label="Explanation level"><option value="Clear and concise">Clear &amp; concise</option><option value="A beginner-friendly level">Beginner level</option><option value="A detailed, exam-ready level">Exam ready</option></select><button class="generate-button" id="generateButton" type="button"><span class="button-spark">✳</span><span id="generateLabel">Build my study kit</span><span class="button-arrow">→</span></button></div>
+          <p class="error-message" id="errorMessage" role="alert" hidden></p>
+        </div>
+        <div class="results card" id="results" aria-live="polite">
+          <div class="results-empty" id="emptyState"><div class="empty-illustration"><span class="empty-ring"></span><span class="empty-card empty-card-a">A</span><span class="empty-card empty-card-b">?</span><span class="empty-card empty-card-c">✳</span></div><span class="step-label">02 / YOUR STUDY KIT</span><h2>Your next study session,<br>starts here.</h2><p>Add your notes above and we’ll shape them into something easier to remember.</p><div class="kit-preview"><span>SUMMARY</span><i></i><span>FLASHCARDS</span><i></i><span>QUIZ</span></div></div>
+          <div class="kit-content" id="kitContent" hidden>
+            <div class="kit-heading"><div><span class="step-label">02 / YOUR STUDY KIT</span><h2 id="kitTitle">Your study kit</h2></div><button class="download-button" id="downloadButton" type="button"><span>↓</span> Save kit</button></div>
+            <div class="kit-tabs" role="tablist" aria-label="Study kit sections"><button class="kit-tab active" type="button" role="tab" aria-selected="true" data-panel="summaryPanel">Summary <span>01</span></button><button class="kit-tab" type="button" role="tab" aria-selected="false" data-panel="cardsPanel">Recall cards <span id="cardCount">00</span></button><button class="kit-tab" type="button" role="tab" aria-selected="false" data-panel="quizPanel">Quick quiz <span id="quizCount">00</span></button></div>
+            <section class="kit-panel" id="summaryPanel" role="tabpanel"><div class="summary-block"><span class="content-kicker">THE BIG PICTURE</span><p id="summaryText"></p></div><div class="ideas-block"><span class="content-kicker">KEY IDEAS TO KEEP</span><ul id="ideaList"></ul></div><div class="next-steps"><span class="content-kicker">A GOOD NEXT STEP</span><ol id="stepList"></ol></div></section>
+            <section class="kit-panel" id="cardsPanel" role="tabpanel" hidden><div class="panel-intro"><div><span class="content-kicker">RECALL PRACTICE</span><p>Try to answer before you flip.</p></div><span class="card-progress" id="cardProgress">01 / 01</span></div><button class="flashcard" id="flashcard" type="button" aria-label="Flashcard. Press to reveal the answer."><span class="flashcard-top"><span id="cardSide">QUESTION</span><span>↻ FLIP</span></span><span class="flashcard-text" id="cardText"></span><span class="flashcard-bottom"><span>STUDYKIT / RECALL</span><span id="cardNumber">01</span></span></button><div class="card-controls"><button id="previousCard" type="button" aria-label="Previous card">←</button><span>Tap the card to reveal</span><button id="nextCard" type="button" aria-label="Next card">→</button></div></section>
+            <section class="kit-panel" id="quizPanel" role="tabpanel" hidden><div class="panel-intro"><div><span class="content-kicker">QUICK CHECK</span><p>Pick the best answer. Learn as you go.</p></div><span class="card-progress" id="quizProgress">01 / 01</span></div><div class="quiz-card"><div class="quiz-question" id="quizQuestion"></div><div class="quiz-options" id="quizOptions"></div><div class="quiz-feedback" id="quizFeedback" hidden></div></div><div class="quiz-controls"><span class="quiz-score" id="quizScore">0 correct</span><button class="next-question" id="nextQuestion" type="button">Next question <span>→</span></button></div></section>
+            <div class="kit-footnote"><span>✳</span> AI can make mistakes. Check important details against your course materials.</div>
+          </div>
+        </div>
+      </section>
+      <section class="how-section"><div class="how-title"><span class="step-label">A SMALLER STEP TO BETTER RECALL</span><h2>From notes to<br><span>know-how.</span></h2></div><div class="how-steps"><article><span class="how-number">01</span><div><h3>Drop in your notes</h3><p>Use your own class notes or paste in a topic you’re revising.</p></div><span class="how-icon">↘</span></article><article><span class="how-number">02</span><div><h3>Get your study kit</h3><p>Gemini helps organize the ideas into a quick, focused review.</p></div><span class="how-icon">✳</span></article><article><span class="how-number">03</span><div><h3>Practice active recall</h3><p>Flip through cards and check your understanding with a short quiz.</p></div><span class="how-icon">↗</span></article></div></section>
+    </main>
+    <footer class="footer"><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>study<span class="brand-light">kit</span></span><span class="brand-ai">AI</span></a><span>Built for curious minds. Keep learning.</span><button id="footerPrivacy" type="button">Privacy &amp; AI</button></footer>
+  </div>
+  <dialog class="privacy-dialog" id="privacyDialog"><button class="dialog-close" id="closePrivacy" type="button" aria-label="Close">×</button><span class="step-label">PRIVACY / AI NOTES</span><h2>Your notes are yours.</h2><p>StudyKit does not save notes or generated kits to a database. When you choose “Build my study kit,” the note text is sent to the Gemini API through this app’s server so it can generate your study materials.</p><p>Your API key stays on the server and is never sent to the browser. Add it to a local .env file for development, or configure it as a secret where you host the app.</p><p>Generated explanations and answers can be wrong. Treat the kit as a study aid and verify important details with your course materials.</p><button class="dialog-done" id="donePrivacy" type="button">Got it</button></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
