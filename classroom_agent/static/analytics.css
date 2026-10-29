@@ -3,3 +3,4 @@
 .analytics-row b{font-size:9px}
 .analytics-row small{font-size:8px;color:var(--muted)}
 .analytics-row strong{grid-column:2;grid-row:1/3;align-self:center;color:var(--green);font-size:12px}
+.key.orientation{background:#7c6bc4}
