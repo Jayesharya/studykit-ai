@@ -4,7 +4,7 @@ A privacy-first classroom support tool built with Python. It records timestamped
 
 ## Browser demo
 
-The static fictional-data demo is in [`docs/index.html`](docs/index.html). After GitHub Pages is set to publish with GitHub Actions and the first workflow deployment completes, it will be available at [https://jayesharya.github.io/studykit-ai/](https://jayesharya.github.io/studykit-ai/). This preview uses fictional names and pre-written sample windows; it does not access a camera or microphone, save entries, or run the Python application or its machine-learning model. The complete local application is available in this repository.
+The static fictional-data demo is in [`docs/index.html`](docs/index.html) and is [live on GitHub Pages](https://jayesharya.github.io/studykit-ai/). This preview uses fictional names and pre-written sample windows; it does not access a camera or microphone, save entries, or run the Python application or its machine-learning model. The complete local application is available in this repository.
 
 ## Project goals
 
