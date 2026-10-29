@@ -138,7 +138,8 @@ function drawChart(samples) {
   context.clearRect(0, 0, width, height);
   const motion = samples.map((row) => row.motion == null ? null : Number(row.motion));
   const audio = samples.map((row) => row.audio == null ? null : Number(row.audio));
-  const hasSignals = motion.some((value) => value !== null) || audio.some((value) => value !== null);
+  const orientation = samples.map((row) => row.orientation == null ? null : Number(row.orientation));
+  const hasSignals = motion.some((value) => value !== null) || audio.some((value) => value !== null) || orientation.some((value) => value !== null);
   $("#chartEmpty").hidden = hasSignals;
   if (!hasSignals) return;
   function line(values, color) {
@@ -158,6 +159,7 @@ function drawChart(samples) {
   }
   line(motion, "#286c50");
   line(audio, "#f08d69");
+  line(orientation, "#7c6bc4");
 }
 
 function renderInsights(items) {
@@ -185,12 +187,14 @@ function render() {
   const devices = state.devices || {};
   const camera = devices.camera === "on";
   const audio = devices.audio === "on";
+  const orientation = devices.head_pose === "on";
   $("#sessionState").textContent = session ? "SESSION LIVE" : "NOT STARTED";
   $("#sessionState").classList.toggle("active", Boolean(session));
   $("#startSession").disabled = Boolean(session);
   $("#endSession").disabled = !session;
   $("#sessionTitle").disabled = Boolean(session);
   $("#cameraToggle").disabled = Boolean(session);
+  $("#orientationToggle").disabled = Boolean(session);
   $("#audioToggle").disabled = Boolean(session);
   $("#overviewTitle").textContent = session ? session.title : "Ready when you are.";
   $("#liveStatus").textContent = session ? "SESSION LIVE" : "READY";
@@ -199,9 +203,14 @@ function render() {
   $("#presentDetail").textContent = session ? "of " + session.roster_count + " rostered" : "Start a session";
   $("#durationMetric").textContent = session ? elapsed(session.started_at) : "00:00";
   $("#startedDetail").textContent = session ? "Started " + clock(session.started_at) : "Waiting to start";
-  $("#deviceMetric").textContent = session ? (Number(camera) + Number(audio)) + " / 2" : "—";
-  $("#deviceDetail").textContent = session ? "camera " + devices.camera + " · mic " + devices.audio : "Optional and local";
-  if (session) $("#sessionTitle").value = session.title;
+  $("#deviceMetric").textContent = session ? (Number(camera) + Number(audio) + Number(orientation)) + " / 3" : "—";
+  $("#deviceDetail").textContent = session ? "camera " + devices.camera + " · mic " + devices.audio + " · head view " + devices.head_pose : "Optional and local";
+  if (session) {
+    $("#sessionTitle").value = session.title;
+    $("#cameraToggle").checked = Boolean(session.camera_enabled);
+    $("#audioToggle").checked = Boolean(session.audio_enabled);
+    $("#orientationToggle").checked = Boolean(session.orientation_enabled);
+  }
   $("#modeIn").setAttribute("aria-pressed", String((devices.scanner_mode || "in") === "in"));
   $("#modeOut").setAttribute("aria-pressed", String((devices.scanner_mode || "in") === "out"));
   $("#modeIn").disabled = !session || !session.camera_enabled;
@@ -261,7 +270,7 @@ $("#startSession").addEventListener("click", async () => {
     await api("/api/sessions/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: $("#sessionTitle").value, camera: $("#cameraToggle").checked, audio: $("#audioToggle").checked }),
+      body: JSON.stringify({ title: $("#sessionTitle").value, camera: $("#cameraToggle").checked, orientation: $("#orientationToggle").checked, audio: $("#audioToggle").checked }),
     });
     notify("Local session started.");
     await refresh();
