@@ -20,7 +20,7 @@ This project map organizes the brief’s scope into **9 epics and 17 tasks**. It
 ## Epic 4 — Computer-vision room signals
 
 - [x] Decode QR badges and measure broad frame-to-frame room movement with OpenCV.
-- [x] Summarize consecutive low-movement windows without identifying or tracking individuals.
+- [x] Offer opt-in room-level front/profile estimates and summarize low-movement spans without identifying or tracking individuals.
 
 ## Epic 5 — Audio room signals
 
