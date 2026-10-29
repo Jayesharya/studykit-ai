@@ -2,6 +2,9 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.python-packages/
+.pip-tmp/
+.test-tmp/
 instance/*
 !instance/.gitkeep
 .DS_Store
