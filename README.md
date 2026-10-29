@@ -1,80 +1,85 @@
 # Multimodal Attendance & Engagement Agent
 
-A local-first classroom assistant for timestamped QR attendance, coarse room-activity trends, and explainable teaching prompts. The dashboard is a decision-support aid: educators verify attendance and decide whether a suggestion fits.
+A privacy-first classroom support tool built with Python. It records timestamped attendance, summarizes room-level movement and sound, and offers explainable teaching prompts with an optional offline machine-learning signal check. Educators review every record and decide whether a suggestion fits their classroom.
 
 ## Browser demo
 
-[Open the interactive demo](https://jayesharya.github.io/studykit-ai/). The public page is an illustrative simulation using fictional data. It does not request camera or microphone access and does not contain a live attendance service.
+The static fictional-data demo is in [`docs/index.html`](docs/index.html). After GitHub Pages is set to publish with GitHub Actions and the first workflow deployment completes, it will be available at [https://jayesharya.github.io/studykit-ai/](https://jayesharya.github.io/studykit-ai/). This preview uses fictional names and pre-written sample windows; it does not access a camera or microphone, save entries, or run the Python application or its machine-learning model. The complete local application is available in this repository.
 
-## What it does
+## Project goals
 
-- **Automated attendance:** locally generated participant QR badges support check-in and check-out timestamps. Session duration is available in the local export.
-- **Room dynamics:** optional OpenCV camera processing scans QR codes and measures broad frame-to-frame movement. Optional audio processing measures volume levels in short windows.
-- **Local insight agent:** transparent, rule-based prompts use coarse room signals and attendance counts to suggest a check-in, pause, recap, or pacing change.
-- **Session analytics:** view attendance and room-level signal trends, review recent sessions, and export attendance as CSV.
-- **Offline by design:** after dependencies are installed, runtime processing and records stay on the host computer. The application makes no cloud or model API calls.
+Educational attendance tools often record presence without showing session context. This project brings together voluntary check-in, coarse room-level activity trends, simple session analytics, and human-reviewed teaching ideas. It is designed to run on one computer without sending classroom data to a cloud service.
 
-## Privacy boundaries
+### Scenarios
 
-This implementation deliberately avoids face recognition, identity inference from video, speech transcription, emotion detection, individual attention scores, and individual engagement rankings. A QR badge identifies a participant only when they choose to present it. Video frames and audio samples are processed transiently in memory and are not saved. Only check-in timestamps and coarse movement/audio levels are stored in a local SQLite database under \`instance/\`.
+1. **Automated attendance tracking:** learners present a locally generated QR badge. The camera requires repeated detections over about four seconds before marking attendance, which helps reject brief appearances. Instructors can use manual check-in instead. Check-in and check-out times are recorded; open check-ins are closed at session end.
+2. **Session dynamics:** optional camera processing measures broad frame-to-frame movement and low-movement spans. Optional audio processing measures sound level without recording or transcribing speech. The dashboard shows separate 15-second trends; an offline model can flag an unusual combined-signal change.
+3. **Teaching suggestions:** visible local rules combine recent room signals and attendance context. A short-term ML anomaly can prompt an educator to check sensor noise or lesson context. Suggestions may propose a check-in, reset, recap, or pacing change, and always leave the decision to the educator.
 
-The public browser demo is simulated. Do not use this prototype as the sole source for attendance, grading, discipline, or other consequential decisions. Obtain appropriate institutional approval and learner notice before classroom use.
+## Features
+
+- **Python application:** Flask dashboard and API, SQLite records, OpenCV QR/movement processing, optional microphone volume analysis, and QR badge generation.
+- **Offline machine learning:** scikit-learn Isolation Forest compares the latest fused 15-second room-signal window with earlier windows from that same session. It activates after 13 usable windows when both camera and audio signals are available. It does not use learner identities or a pre-trained attention model.
+- **Session analytics:** live roster status, check-in duration, recent sessions, per-participant attendance rate and minutes present, and downloadable session CSVs.
+- **Human-reviewed agent:** rule-based teaching prompts plus a room-signal anomaly hint. The software does not issue decisions about learners.
+- **Synthetic browser demo:** a no-device, fictional-data preview suitable for trying the screen flow before installing the local app.
+
+## Privacy and limits
+
+The application does not use face recognition, face detection, head-pose tracking, speech transcription, speaker identification, emotion inference, attention scores, or individual engagement rankings. Camera frames are used in memory for QR decoding and broad frame differences, then discarded. Audio samples are reduced to short-term volume measurements in memory; raw audio is not saved. Names, QR tokens, attendance times, and aggregate room measurements are kept in a local SQLite database in `instance/`.
+
+Movement and volume can reflect the lesson format, room conditions, or sensor placement. They do not measure learning, participation quality, attention, comprehension, or an individual learner’s behavior. QR badges can be shared and sensors can fail. Verify attendance and ask learners directly; do not use this prototype as the sole basis for grading, discipline, or other consequential decisions. Give learners notice and obtain appropriate institutional approval before a pilot.
+
+## Requirements
+
+- **Hardware:** Intel Core i5 (8th generation or later), AMD Ryzen 5, or equivalent; 8 GB RAM minimum and 16 GB recommended; 256 GB SSD or 500 GB HDD. The brief recommends a stable 10 Mbps connection (20 Mbps recommended) for package installation and deployment; runtime processing is local.
+- **Software:** Windows 10/11, macOS Monterey or later, or Ubuntu 20.04+; Python 3.8+; Git; and a current Chrome, Firefox, or Edge browser. VS Code or another editor is recommended.
+- **Internet:** needed to install dependencies and publish the optional Pages demo. Once packages are installed, classroom data processing makes no network or model API calls.
 
 ## Run locally
 
-**Requirements:** Python 3.8+, Windows 10/11, macOS Monterey or later, or Ubuntu 20.04+. A modern Chrome, Firefox, or Edge browser is recommended. An Intel Core i5 (8th generation+) or equivalent Ryzen 5, 8 GB RAM minimum (16 GB recommended), and 256 GB SSD are suitable for a small pilot.
-
 1. Install Python 3.8 or later.
-2. In this directory, install the packages with \`python -m pip install -r requirements.txt\`.
-3. Start the dashboard with \`python app.py\`.
+2. From this project folder, install dependencies: `python -m pip install -r requirements.txt`.
+3. Start the app: `python app.py`.
 4. Open [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-The first package installation needs network access. Once installed, the application itself can run offline. On Linux, audio capture may require the operating system's PortAudio library. If a camera or microphone is unavailable, attendance can still be recorded manually and the app reports the sensor status.
+On Linux, microphone input may need the operating system’s PortAudio package. Camera and microphone are off until selected when starting a session. If a sensor is unavailable, attendance can still be managed manually. Installation needs a network connection; the running application is local.
 
 ## Use a session
 
-1. Add participants to the local roster. The public browser demo uses fictional sample data.
-2. Choose whether to enable the camera and/or microphone. Both are off until explicitly selected.
-3. Start a session. Use each participant's **QR** button to display their locally generated badge. Use the dashboard's QR Scanner Mode buttons to choose check-in or check-out, or use the manual buttons.
-4. Review current check-ins, session duration, and the separate room-signal trends. End the session to close open check-ins.
-5. Download a CSV from Recent Sessions.
-
-A QR scan records a check-in only once per session. A later check-out is recorded when the instructor switches to the check-out flow; an open check-in is closed when the session ends. The browser demo illustrates this flow with fictional values.
+1. Add participants to the local roster.
+2. Choose whether to enable the camera and microphone; both are optional.
+3. Start a session. For camera check-in, choose check-in mode and hold a participant’s QR badge in view for about four seconds. Switch to check-out mode for a later scan. Manual buttons remain available.
+4. Review the roster, session duration, room-level charts, and suggestions. End the session to close any open check-ins.
+5. Review participant attendance summaries and download a CSV from Recent Sessions.
 
 ## Technical architecture
 
-\`\`\`text
+```text
 Local browser dashboard
-        │ localhost only
-        ▼
-Flask routes ─────────────── SQLite (instance/classroom.db)
-        │                         roster, timestamps, aggregates
-        ├── Camera worker: QR decode + coarse frame difference
-        ├── Audio worker: transient RMS volume windows
-        └── Local insight agent: transparent rules → teaching prompts
-\`\`\`
+       │ localhost only
+       ▼
+Flask application ───────────── SQLite (instance/classroom.db)
+       │                            roster, attendance, aggregates
+       ├── Camera worker: repeated QR confirmation + frame differences
+       ├── Audio worker: transient RMS volume windows
+       ├── Insight agent: transparent rules + session context
+       └── ML signal check: per-session Isolation Forest on fused windows
+```
 
-The camera and microphone workers never persist raw frames, images, waveforms, or speech. The insight agent is a small offline decision-support component, not a trained attention or emotion classifier. AI assistance was used while developing this prototype; runtime suggestions follow fixed local rules.
+The ML detector needs at least 13 usable windows containing both movement and audio data, uses earlier windows as its baseline, and flags room-signal changes rather than learner states. Short sessions or sessions with only one sensor still receive the explainable rule-based suggestions. There is no generative AI service or remote inference in the runtime.
 
-## Requirements and planning snapshot
+## Project materials
 
-- Skills: Artificial Intelligence, Machine Learning, Python.
-- Hardware: Intel Core i5 (8th generation+) / AMD Ryzen 5 equivalent; 8 GB RAM minimum, 16 GB recommended; 256 GB SSD (or 500 GB HDD).
-- Software: Python 3.8+, Git, VS Code or another editor, and a current Chrome/Firefox/Edge browser.
-- The project brief lists 9 epics and 17 tasks; no mentor is currently assigned.
-
-## Project layout
-
-- \`app.py\` — local Flask server and attendance/session API.
-- \`classroom_agent/monitor.py\` — optional QR/motion and audio workers.
-- \`classroom_agent/agent.py\` — explainable local suggestion rules.
-- \`classroom_agent/templates/\` and \`static/\` — local dashboard UI.
-- \`docs/\` — static GitHub Pages demonstration with synthetic data.
-- \`instance/\` — local database; excluded from version control.
-
-## Limitations
-
-This is a prototype for supervised pilots. QR badges can be shared, room movement is a coarse visual signal, and volume level cannot identify a speaker or determine participation quality. The demo's sample values are fictional. The signal agent is rule-based and does not claim to measure learning or attention.
+- [`PROJECT_PLAN.md`](PROJECT_PLAN.md) — implementation map organized as 9 epics and 17 tasks to match the project brief.
+- [`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md) — components, data flow, system requirements, privacy boundaries, and scenario mapping.
+- `app.py` — Flask server, local API, SQLite records, and exports.
+- `classroom_agent/monitor.py` — optional QR, movement, and audio workers.
+- `classroom_agent/ml_signal_model.py` — offline fused-signal anomaly detector.
+- `classroom_agent/agent.py` — explainable teaching suggestions.
+- `classroom_agent/templates/` and `classroom_agent/static/` — local dashboard.
+- `docs/index.html` — fictional-data GitHub Pages demo.
+- `instance/` — local database location, excluded from version control.
 
 ## License
 
