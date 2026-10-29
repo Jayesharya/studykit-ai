@@ -10,6 +10,12 @@ The static fictional-data demo is in [`docs/index.html`](docs/index.html). After
 
 Educational attendance tools often record presence without showing session context. This project brings together voluntary check-in, coarse room-level activity trends, simple session analytics, and human-reviewed teaching ideas. It is designed to run on one computer without sending classroom data to a cloud service.
 
+## Required skills
+
+- Artificial Intelligence
+- Machine Learning
+- Python
+
 ### Scenarios
 
 1. **Automated attendance tracking:** learners present a locally generated QR badge. The camera requires repeated detections over about four seconds before marking attendance, which helps reject brief appearances. Instructors can use manual check-in instead. Check-in and check-out times are recorded; open check-ins are closed at session end.
