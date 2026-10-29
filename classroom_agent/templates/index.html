@@ -7,6 +7,7 @@
   <meta name="description" content="A local-first dashboard for QR attendance and aggregated room activity signals.">
   <title>Classroom Signal — Local classroom intelligence</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='analytics.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
@@ -27,7 +28,7 @@
           <label class="small-label" for="sessionTitle">Session name</label>
           <input class="text-input" id="sessionTitle" maxlength="100" value="Class session" placeholder="e.g. Biology — Cell structures">
           <div class="devices">
-            <label class="device"><input id="cameraToggle" type="checkbox"><span class="box"></span><span><b>Camera signals</b><small>QR badge scanning + broad movement only</small></span></label>
+            <label class="device"><input id="cameraToggle" type="checkbox"><span class="box"></span><span><b>Camera signals</b><small>QR scanning + broad movement; hold a badge steady for about 4 seconds</small></span></label>
             <label class="device"><input id="audioToggle" type="checkbox"><span class="box"></span><span><b>Audio activity</b><small>Volume level only; no audio is saved</small></span></label>
           </div>
           <p class="privacy-note">Device access starts only after you begin. Camera and microphone stay on this computer.</p>
@@ -61,13 +62,18 @@
           <div class="panel-title"><div><span class="kicker">05 / SESSION HISTORY</span><h2>Recent sessions</h2></div><span class="history-label">LOCAL RECORDS</span></div>
           <div id="historyList" class="history"><p class="muted">Completed session summaries will appear here.</p></div>
         </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">06 / PARTICIPANT ANALYTICS</span><h2>Attendance over time</h2></div><span class="history-label" id="analyticsSessionCount">0 SESSIONS</span></div>
+          <p class="muted">Local attendance history for session review. These summaries are not engagement or academic performance scores.</p>
+          <div id="analyticsList" class="analytics"><p class="muted">Add participants and complete sessions to build a history.</p></div>
+        </article>
       </section>
     </section>
   </main>
   <footer><span>Classroom Signal / Local-first classroom support</span><span>Attendance is an aid to verify, not an automated decision.</span><button id="footerPrivacy">Privacy &amp; method</button></footer>
 </div>
-<dialog id="privacyDialog" class="dialog"><button class="close" id="closePrivacy" aria-label="Close">×</button><span class="kicker">PRIVACY / METHOD</span><h2>Useful context, without surveillance.</h2><p><b>Attendance:</b> learners check in with a locally generated QR badge. Check-in duration is recorded; instructors should verify the list.</p><p><b>Room signals:</b> optional camera processing scans QR codes and computes broad frame-to-frame movement. Optional audio processing keeps only short-term volume levels. Raw video and audio are never stored or transmitted.</p><p><b>Limits:</b> movement and sound are not measures of attention, emotion, comprehension, or individual engagement. The local insight agent uses visible rules and offers suggestions only.</p><p><b>Storage:</b> roster, attendance, and coarse session summaries stay in a local SQLite database. No cloud connection is made.</p><button class="primary" id="donePrivacy">Understood</button></dialog>
-<dialog id="qrDialog" class="dialog qr-dialog"><button class="close" id="closeQr" aria-label="Close">×</button><span class="kicker">LOCAL QR BADGE</span><h2 id="qrName">Participant badge</h2><img id="qrImage" alt="Private locally generated check-in QR code"><p>Show this code to the session camera in the selected check-in mode.</p></dialog>
+<dialog id="privacyDialog" class="dialog"><button class="close" id="closePrivacy" aria-label="Close">×</button><span class="kicker">PRIVACY / METHOD</span><h2>Useful context, without surveillance.</h2><p><b>Attendance:</b> learners check in with a locally generated QR badge. The camera requires repeated detections over about four seconds before accepting a scan. Check-in duration is recorded; instructors should verify the list.</p><p><b>Room signals:</b> optional camera processing scans QR codes and computes broad frame-to-frame movement, including low-movement spans. Optional audio processing keeps only short-term volume levels. No face detection, head-pose tracking, speech analysis, or identity inference is used. Raw video and audio are never stored or transmitted.</p><p><b>Machine learning:</b> an offline Isolation Forest compares a fused 15-second room-signal window with earlier windows from the same session after enough data is available. It flags unusual signal changes only; it does not estimate attention, emotion, comprehension, or individual engagement.</p><p><b>Limits:</b> movement and sound are not measures of attention, emotion, comprehension, or individual engagement. The local insight agent uses visible rules, adds the optional signal anomaly hint, and offers suggestions only.</p><p><b>Storage:</b> roster, attendance, and coarse session summaries stay in a local SQLite database. No cloud connection is made.</p><button class="primary" id="donePrivacy">Understood</button></dialog>
+<dialog id="qrDialog" class="dialog qr-dialog"><button class="close" id="closeQr" aria-label="Close">×</button><span class="kicker">LOCAL QR BADGE</span><h2 id="qrName">Participant badge</h2><img id="qrImage" alt="Private locally generated check-in QR code"><p>Hold this code steadily in the camera for about four seconds. Repeated detection helps reject brief passers-by. Manual check-in is available too.</p></dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
