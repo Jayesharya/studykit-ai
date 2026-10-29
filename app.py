@@ -90,6 +90,17 @@ def init_db():
         if "orientation" not in sample_columns:
             db.execute("ALTER TABLE activity_samples ADD COLUMN orientation REAL")
 
+        # A process restart stops the optional sensor workers. Close any open
+        # session records so the dashboard cannot mistake a dead session for
+        # one that is still collecting data.
+        stamp = now_utc()
+        db.execute("UPDATE sessions SET ended_at=? WHERE ended_at IS NULL", (stamp,))
+        db.execute(
+            "UPDATE attendance SET check_out=? WHERE check_out IS NULL AND session_id IN "
+            "(SELECT id FROM sessions WHERE ended_at IS NOT NULL)",
+            (stamp,),
+        )
+
 
 def mark_attendance(session_id, student_id, mode):
     stamp = now_utc()
