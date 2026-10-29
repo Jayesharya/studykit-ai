@@ -62,7 +62,8 @@ def init_db():
                 started_at TEXT NOT NULL,
                 ended_at TEXT,
                 camera_enabled INTEGER NOT NULL DEFAULT 0,
-                audio_enabled INTEGER NOT NULL DEFAULT 0
+                audio_enabled INTEGER NOT NULL DEFAULT 0,
+                orientation_enabled INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS attendance (
                 session_id TEXT NOT NULL,
@@ -76,11 +77,18 @@ def init_db():
                 session_id TEXT NOT NULL,
                 captured_at TEXT NOT NULL,
                 motion REAL,
-                audio REAL
+                audio REAL,
+                orientation REAL
             );
             CREATE INDEX IF NOT EXISTS idx_activity_session_time
                 ON activity_samples(session_id, captured_at);
         """)
+        session_columns = {row["name"] for row in db.execute("PRAGMA table_info(sessions)")}
+        if "orientation_enabled" not in session_columns:
+            db.execute("ALTER TABLE sessions ADD COLUMN orientation_enabled INTEGER NOT NULL DEFAULT 0")
+        sample_columns = {row["name"] for row in db.execute("PRAGMA table_info(activity_samples)")}
+        if "orientation" not in sample_columns:
+            db.execute("ALTER TABLE activity_samples ADD COLUMN orientation REAL")
 
 
 def mark_attendance(session_id, student_id, mode):
@@ -132,7 +140,8 @@ def mark_qr(session_id, token, mode):
 def record_sample(session_id, sample):
     motion = sample.get("motion")
     audio = sample.get("audio")
-    if motion is None and audio is None:
+    orientation = sample.get("orientation")
+    if motion is None and audio is None and orientation is None:
         return
     with connect() as db:
         live = db.execute(
@@ -140,8 +149,8 @@ def record_sample(session_id, sample):
         ).fetchone()
         if live and not live["ended_at"]:
             db.execute(
-                "INSERT INTO activity_samples(session_id, captured_at, motion, audio) VALUES(?, ?, ?, ?)",
-                (session_id, now_utc(), motion, audio),
+                "INSERT INTO activity_samples(session_id, captured_at, motion, audio, orientation) VALUES(?, ?, ?, ?, ?)",
+                (session_id, now_utc(), motion, audio, orientation),
             )
 
 
@@ -156,7 +165,7 @@ def session_payload(session_id):
             WHERE a.session_id=? ORDER BY a.check_in
         """, (session_id,)).fetchall()
         samples = db.execute("""
-            SELECT captured_at, motion, audio FROM activity_samples
+            SELECT captured_at, motion, audio, orientation FROM activity_samples
             WHERE session_id=? ORDER BY captured_at DESC LIMIT 60
         """, (session_id,)).fetchall()
         roster_count = db.execute("SELECT COUNT(*) FROM students").fetchone()[0]
@@ -224,7 +233,7 @@ def participant_analytics():
 def monitor_status():
     with state_lock:
         current = active_monitor
-    return current.status() if current else {"camera": "off", "audio": "off", "scanner_mode": "in"}
+    return current.status() if current else {"camera": "off", "audio": "off", "head_pose": "off", "scanner_mode": "in"}
 
 
 @app.get("/")
@@ -275,7 +284,8 @@ def start_session():
     global active_monitor, active_session_id
     body = request.get_json(silent=True) or {}
     title = str(body.get("title", "")).strip()[:100] or "Class session"
-    use_camera = bool(body.get("camera"))
+    use_orientation = bool(body.get("orientation"))
+    use_camera = bool(body.get("camera")) or use_orientation
     use_audio = bool(body.get("audio"))
     with state_lock:
         if active_session_id:
@@ -284,14 +294,15 @@ def start_session():
         stamp = now_utc()
         with connect() as db:
             db.execute(
-                "INSERT INTO sessions(id, title, started_at, camera_enabled, audio_enabled) VALUES(?, ?, ?, ?, ?)",
-                (session_id, title, stamp, int(use_camera), int(use_audio)),
+                "INSERT INTO sessions(id, title, started_at, camera_enabled, audio_enabled, orientation_enabled) VALUES(?, ?, ?, ?, ?, ?)",
+                (session_id, title, stamp, int(use_camera), int(use_audio), int(use_orientation)),
             )
         monitor = ClassroomMonitor(
             on_qr=lambda token, mode: mark_qr(session_id, token, mode),
             on_sample=lambda values: record_sample(session_id, values),
             camera_enabled=use_camera,
             audio_enabled=use_audio,
+            orientation_enabled=use_orientation,
         )
         active_monitor = monitor
         active_session_id = session_id
