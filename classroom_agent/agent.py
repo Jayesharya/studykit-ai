@@ -7,7 +7,7 @@ def build_insights(samples, present_count, roster_count):
     if not samples:
         insights.append({
             "title": "Gather a few signal windows",
-            "body": "Start an optional camera or microphone stream to see room-level activity trends. No face or voice identity analysis is performed.",
+            "body": "Start optional local sensors to see room-level activity trends. No face or voice identities are recognized or tracked.",
             "tone": "neutral",
         })
     else:
@@ -15,6 +15,8 @@ def build_insights(samples, present_count, roster_count):
         audio_values = [float(row["audio"]) for row in samples if row.get("audio") is not None]
         recent_motion = sum(motion_values[-4:]) / len(motion_values[-4:]) if motion_values else None
         recent_audio = sum(audio_values[-4:]) / len(audio_values[-4:]) if audio_values else None
+        orientation_values = [float(row["orientation"]) for row in samples if row.get("orientation") is not None]
+        recent_orientation = sum(orientation_values[-4:]) / len(orientation_values[-4:]) if orientation_values else None
         low_motion_windows = 0
         for value in reversed(motion_values):
             if value >= 0.025:
@@ -26,6 +28,12 @@ def build_insights(samples, present_count, roster_count):
                 "title": "Low room movement for about " + str(minutes) + " minutes",
                 "body": "This is a camera-wide movement estimate, not a measure of individual inactivity. A still camera or teaching format can produce the same signal. Check the sensor view and ask the group whether a brief reset would help.",
                 "tone": "amber",
+            })
+        if recent_orientation is not None and recent_orientation < 0.35 and len(orientation_values) >= 3:
+            insights.append({
+                "title": "Fewer front-facing detections in recent windows",
+                "body": "This optional camera-wide front/profile estimate can change with note-taking, group work, or camera placement. It cannot tell who is attentive. Check the room context and ask learners directly before adjusting the session.",
+                "tone": "neutral",
             })
         if recent_motion is not None and recent_audio is not None:
             if recent_motion < 0.08 and recent_audio < 0.12 and len(samples) >= 3:
