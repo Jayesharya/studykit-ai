@@ -5,16 +5,18 @@ import time
 class ClassroomMonitor:
     """Read-only device monitor. Frames and audio samples stay in memory and are discarded."""
 
-    def __init__(self, on_qr, on_sample, camera_enabled=False, audio_enabled=False):
+    def __init__(self, on_qr, on_sample, camera_enabled=False, audio_enabled=False, orientation_enabled=False):
         self.on_qr = on_qr
         self.on_sample = on_sample
         self.camera_enabled = camera_enabled
         self.audio_enabled = audio_enabled
+        self.orientation_enabled = orientation_enabled
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
         self.mode = "in"
         self.camera_status = "starting" if camera_enabled else "off"
         self.audio_status = "starting" if audio_enabled else "off"
+        self.head_pose_status = "starting" if orientation_enabled else "off"
         self.threads = []
 
     def start(self):
@@ -42,6 +44,7 @@ class ClassroomMonitor:
         return {
             "camera": self.camera_status,
             "audio": self.audio_status,
+            "head_pose": self.head_pose_status,
             "scanner_mode": self.get_mode(),
         }
 
@@ -52,12 +55,31 @@ class ClassroomMonitor:
             camera = cv2.VideoCapture(0)
             if not camera.isOpened():
                 self.camera_status = "unavailable"
+                if self.orientation_enabled:
+                    self.head_pose_status = "unavailable"
                 return
             self.camera_status = "on"
             detector = cv2.QRCodeDetector()
+            frontal = None
+            profile = None
+            if self.orientation_enabled:
+                try:
+                    cascade_dir = cv2.data.haarcascades
+                    frontal = cv2.CascadeClassifier(cascade_dir + "haarcascade_frontalface_default.xml")
+                    profile = cv2.CascadeClassifier(cascade_dir + "haarcascade_profileface.xml")
+                    if frontal.empty() or profile.empty():
+                        frontal = None
+                        profile = None
+                        self.head_pose_status = "unavailable"
+                    else:
+                        self.head_pose_status = "on"
+                except Exception:
+                    self.head_pose_status = "unavailable"
             previous = None
             qr_candidates = {}
             motion_window = []
+            orientation_window = []
+            frame_number = 0
             last_sample = time.monotonic()
             while not self.stop_event.is_set():
                 ok, frame = camera.read()
@@ -92,13 +114,26 @@ class ClassroomMonitor:
                             candidate["mode"] = mode
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 small = cv2.resize(gray, (160, 90))
+                frame_number += 1
+                if frontal is not None and profile is not None and frame_number % 5 == 0:
+                    view = cv2.resize(gray, (320, 180))
+                    front_faces = frontal.detectMultiScale(view, scaleFactor=1.1, minNeighbors=4, minSize=(24, 24))
+                    side_faces = profile.detectMultiScale(view, scaleFactor=1.1, minNeighbors=4, minSize=(24, 24))
+                    flipped_faces = profile.detectMultiScale(cv2.flip(view, 1), scaleFactor=1.1, minNeighbors=4, minSize=(24, 24))
+                    front_count = len(front_faces)
+                    side_count = len(side_faces) + len(flipped_faces)
+                    detected = front_count + side_count
+                    if detected:
+                        orientation_window.append(front_count / detected)
                 if previous is not None:
                     motion_window.append(float(np.mean(cv2.absdiff(small, previous)) / 255.0))
                 previous = small
                 if now - last_sample >= 15:
                     motion = sum(motion_window) / len(motion_window) if motion_window else None
-                    self.on_sample({"motion": motion, "audio": None})
+                    orientation = sum(orientation_window) / len(orientation_window) if orientation_window else None
+                    self.on_sample({"motion": motion, "audio": None, "orientation": orientation})
                     motion_window.clear()
+                    orientation_window.clear()
                     last_sample = now
             self.camera_status = "off"
         except Exception as exc:
@@ -108,6 +143,7 @@ class ClassroomMonitor:
                 camera.release()
             if self.stop_event.is_set():
                 self.camera_status = "off"
+                self.head_pose_status = "off"
 
     def _audio_loop(self):
         try:
