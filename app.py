@@ -175,6 +175,52 @@ def roster_payload():
     return [dict(row) for row in rows]
 
 
+def participant_analytics():
+    """Summarize local attendance records without ranking learners."""
+    with connect() as db:
+        session_count = db.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+        session_starts = db.execute("SELECT started_at FROM sessions").fetchall()
+        rows = db.execute("""
+            SELECT s.id, s.name, s.created_at, a.check_in, a.check_out,
+                   se.started_at, se.ended_at
+            FROM students s
+            LEFT JOIN attendance a ON a.student_id=s.id
+            LEFT JOIN sessions se ON se.id=a.session_id
+            ORDER BY s.name, a.check_in
+        """).fetchall()
+
+    now = datetime.now(timezone.utc)
+    summary = {}
+    for row in rows:
+        person = summary.setdefault(row["id"], {
+            "student_id": row["id"], "name": row["name"],
+            "sessions_attended": 0, "sessions_total": sum(
+                1 for session in session_starts
+                if session["started_at"] >= row["created_at"]
+            ), "attendance_rate": 0,
+            "minutes_present": 0, "last_check_in": None,
+        })
+        if not row["check_in"]:
+            continue
+        person["sessions_attended"] += 1
+        person["last_check_in"] = row["check_in"]
+        try:
+            start = datetime.fromisoformat(row["check_in"].replace("Z", "+00:00"))
+            end_value = row["check_out"] or row["ended_at"]
+            end = datetime.fromisoformat(end_value.replace("Z", "+00:00")) if end_value else now
+            person["minutes_present"] += max(0, int((end - start).total_seconds() // 60))
+        except (TypeError, ValueError):
+            pass
+
+    results = []
+    for person in summary.values():
+        person["attendance_rate"] = round(
+            100 * person["sessions_attended"] / person["sessions_total"], 1
+        ) if person["sessions_total"] else 0
+        results.append(person)
+    return {"session_count": session_count, "participants": results}
+
+
 def monitor_status():
     with state_lock:
         current = active_monitor
@@ -199,6 +245,7 @@ def api_state():
     current = session_payload(active["id"]) if active else None
     return jsonify({
         "roster": roster_payload(),
+        "analytics": participant_analytics(),
         "session": current,
         "history": [dict(row) for row in history],
         "devices": monitor_status(),
