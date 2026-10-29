@@ -13,12 +13,12 @@ Educational attendance tools often record presence without showing session conte
 ### Scenarios
 
 1. **Automated attendance tracking:** learners present a locally generated QR badge. The camera requires repeated detections over about four seconds before marking attendance, which helps reject brief appearances. Instructors can use manual check-in instead. Check-in and check-out times are recorded; open check-ins are closed at session end.
-2. **Session dynamics:** optional camera processing measures broad frame-to-frame movement and low-movement spans. Optional audio processing measures sound level without recording or transcribing speech. The dashboard shows separate 15-second trends; an offline model can flag an unusual combined-signal change.
+2. **Session dynamics:** optional camera processing measures broad frame-to-frame movement and low-movement spans. An additional opt-in estimates the room-wide proportion of front-facing versus profile detections. Optional audio processing measures sound level without recording or transcribing speech. The dashboard shows separate 15-second trends; an offline model can flag an unusual combined-signal change.
 3. **Teaching suggestions:** visible local rules combine recent room signals and attendance context. A short-term ML anomaly can prompt an educator to check sensor noise or lesson context. Suggestions may propose a check-in, reset, recap, or pacing change, and always leave the decision to the educator.
 
 ## Features
 
-- **Python application:** Flask dashboard and API, SQLite records, OpenCV QR/movement processing, optional microphone volume analysis, and QR badge generation.
+- **Python application:** Flask dashboard and API, SQLite records, OpenCV QR/movement and optional coarse head-orientation processing, optional microphone volume analysis, and QR badge generation.
 - **Offline machine learning:** scikit-learn Isolation Forest compares the latest fused 15-second room-signal window with earlier windows from that same session. It activates after 13 usable windows when both camera and audio signals are available. It does not use learner identities or a pre-trained attention model.
 - **Session analytics:** live roster status, check-in duration, recent sessions, per-participant attendance rate and minutes present, and downloadable session CSVs.
 - **Human-reviewed agent:** rule-based teaching prompts plus a room-signal anomaly hint. The software does not issue decisions about learners.
@@ -26,9 +26,9 @@ Educational attendance tools often record presence without showing session conte
 
 ## Privacy and limits
 
-The application does not use face recognition, face detection, head-pose tracking, speech transcription, speaker identification, emotion inference, attention scores, or individual engagement rankings. Camera frames are used in memory for QR decoding and broad frame differences, then discarded. Audio samples are reduced to short-term volume measurements in memory; raw audio is not saved. Names, QR tokens, attendance times, and aggregate room measurements are kept in a local SQLite database in `instance/`.
+The application does not use face recognition, identity inference, persistent face tracking, speech transcription, speaker identification, emotion inference, attention scores, or individual engagement rankings. If the educator explicitly enables coarse head orientation, OpenCV Haar cascades estimate the room-wide front/profile ratio in memory; no face boxes or images are saved. Camera frames are otherwise used for QR decoding and broad frame differences, then discarded. Audio samples are reduced to short-term volume measurements in memory; raw audio is not saved. Names, QR tokens, attendance times, and aggregate room measurements are kept in a local SQLite database in `instance/`.
 
-Movement and volume can reflect the lesson format, room conditions, or sensor placement. They do not measure learning, participation quality, attention, comprehension, or an individual learner’s behavior. QR badges can be shared and sensors can fail. Verify attendance and ask learners directly; do not use this prototype as the sole basis for grading, discipline, or other consequential decisions. Give learners notice and obtain appropriate institutional approval before a pilot.
+Movement, front/profile proportions, and volume can reflect the lesson format, room conditions, or sensor placement. They do not measure learning, participation quality, attention, comprehension, or an individual learner’s behavior. QR badges can be shared and sensors can fail. Verify attendance and ask learners directly; do not use this prototype as the sole basis for grading, discipline, or other consequential decisions. Give learners notice and obtain appropriate institutional approval before a pilot.
 
 ## Requirements
 
@@ -61,7 +61,7 @@ Local browser dashboard
        ▼
 Flask application ───────────── SQLite (instance/classroom.db)
        │                            roster, attendance, aggregates
-       ├── Camera worker: repeated QR confirmation + frame differences
+       ├── Camera worker: repeated QR confirmation + frame differences + optional head view
        ├── Audio worker: transient RMS volume windows
        ├── Insight agent: transparent rules + session context
        └── ML signal check: per-session Isolation Forest on fused windows
