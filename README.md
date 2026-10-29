@@ -51,6 +51,17 @@ Movement, front/profile proportions, and volume can reflect the lesson format, r
 
 On Linux, microphone input may need the operating system’s PortAudio package. Camera and microphone are off until selected when starting a session. If a sensor is unavailable, attendance can still be managed manually. Installation needs a network connection; the running application is local.
 
+## Run checks
+
+The API and attendance flow checks use only the Python standard library and Flask:
+
+```bash
+python -m pip install "Flask>=3.0,<4"
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions runs these checks on pushes and pull requests to `main`.
+
 ## Use a session
 
 1. Add participants to the local roster.
