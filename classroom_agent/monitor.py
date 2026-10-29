@@ -56,7 +56,7 @@ class ClassroomMonitor:
             self.camera_status = "on"
             detector = cv2.QRCodeDetector()
             previous = None
-            last_qr = {}
+            qr_candidates = {}
             motion_window = []
             last_sample = time.monotonic()
             while not self.stop_event.is_set():
@@ -67,11 +67,29 @@ class ClassroomMonitor:
                     continue
                 text, points, _ = detector.detectAndDecode(frame)
                 now = time.monotonic()
-                if text:
-                    key = text.strip()
-                    if key and now - last_qr.get(key, 0) > 4:
-                        last_qr[key] = now
-                        self.on_qr(key, self.get_mode())
+                # Require repeated observations over several seconds so a
+                # one-frame decode or passing badge does not mark attendance.
+                seen = text.strip() if text else None
+                for key in list(qr_candidates):
+                    if key != seen and now - qr_candidates[key]["last"] > 7:
+                        del qr_candidates[key]
+                if seen:
+                    candidate = qr_candidates.get(seen)
+                    if candidate is not None and now - candidate["last"] > 7:
+                        del qr_candidates[seen]
+                        candidate = None
+                    if candidate is None:
+                        qr_candidates[seen] = {"first": now, "last": now, "hits": 1, "mode": None}
+                    else:
+                        if now - candidate["last"] >= 1.25:
+                            candidate["hits"] += 1
+                            candidate["last"] = now
+                    candidate = qr_candidates[seen]
+                    if candidate["hits"] >= 3 and now - candidate["first"] >= 4:
+                        mode = self.get_mode()
+                        if candidate["mode"] != mode:
+                            self.on_qr(seen, mode)
+                            candidate["mode"] = mode
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 small = cv2.resize(gray, (160, 90))
                 if previous is not None:
