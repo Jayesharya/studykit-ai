@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f1">
+  <meta name="description" content="A local-first dashboard for QR attendance and aggregated room activity signals.">
+  <title>Classroom Signal — Local classroom intelligence</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark"><i></i><i></i><i></i></span><span>classroom<span class="brand-light">signal</span></span></a>
+    <div class="top-meta"><span class="offline"><i></i> LOCAL / OFFLINE</span><button class="link-button" id="privacyButton">Privacy &amp; method</button></div>
+  </header>
+  <main>
+    <section class="hero">
+      <div><span class="eyebrow"><i></i> MULTIMODAL CLASSROOM ASSISTANT</span><h1>Make room<br>for <em>better</em><br>learning.</h1><p>Private attendance, clear room-level signals, and practical prompts for your next teaching move.</p></div>
+      <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-sheet sheet-back"><span>SESSION NOTES</span><i></i><i></i><i></i></div><div class="art-sheet sheet-front"><small>CLASS / LIVE</small><strong>People<br>first.<br><b>Signals second.</b></strong><span>LOCAL DEVICE ONLY <b>✳</b></span></div><label>NO CLOUD<br>NO FACE ID</label></div>
+    </section>
+    <section class="workspace">
+      <aside class="left-col">
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">01 / SESSION</span><h2>Start a class session</h2></div><span class="chip" id="sessionState">NOT STARTED</span></div>
+          <label class="small-label" for="sessionTitle">Session name</label>
+          <input class="text-input" id="sessionTitle" maxlength="100" value="Class session" placeholder="e.g. Biology — Cell structures">
+          <div class="devices">
+            <label class="device"><input id="cameraToggle" type="checkbox"><span class="box"></span><span><b>Camera signals</b><small>QR badge scanning + broad movement only</small></span></label>
+            <label class="device"><input id="audioToggle" type="checkbox"><span class="box"></span><span><b>Audio activity</b><small>Volume level only; no audio is saved</small></span></label>
+          </div>
+          <p class="privacy-note">Device access starts only after you begin. Camera and microphone stay on this computer.</p>
+          <div class="scan-mode"><span>QR SCANNER MODE</span><div><button type="button" id="modeIn" data-mode="in" aria-pressed="true">Check in</button><button type="button" id="modeOut" data-mode="out" aria-pressed="false">Check out</button></div></div>
+          <button class="primary" id="startSession"><span>✳</span> Start local session <b>→</b></button>
+          <button class="secondary" id="endSession" disabled>End session and close open check-ins</button>
+          <p id="errorMessage" class="error" role="alert" hidden></p>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">02 / LOCAL ROSTER</span><h2>Participants</h2></div><span class="chip count" id="rosterCount">00</span></div>
+          <p class="muted">Names and QR tokens stay in a local database on this device.</p>
+          <div class="add-row"><input id="participantName" maxlength="80" placeholder="Participant name" aria-label="Participant name"><input id="participantId" maxlength="32" placeholder="ID (optional)" aria-label="Participant ID"><button id="addParticipant" aria-label="Add participant">+</button></div>
+          <div id="rosterList" class="roster"></div>
+          <div class="legend"><span><i class="dot present"></i> Checked in</span><span><i class="dot absent"></i> Not checked in</span></div>
+        </article>
+      </aside>
+      <section class="right-col">
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">03 / ROOM OVERVIEW</span><h2 id="overviewTitle">Ready when you are.</h2></div><span class="live-chip" id="liveChip"><i></i><span id="liveStatus">READY</span></span></div>
+          <div class="metrics"><div><small>CHECKED IN</small><strong id="presentMetric">—</strong><span id="presentDetail">Start a session</span></div><div><small>SESSION TIME</small><strong id="durationMetric">00:00</strong><span id="startedDetail">Waiting to start</span></div><div><small>DEVICE SIGNALS</small><strong id="deviceMetric">—</strong><span id="deviceDetail">Optional and local</span></div></div>
+          <div class="chart-head"><div><span class="kicker">ROOM ACTIVITY / 15-SECOND WINDOWS</span><p>Movement and sound levels are shown separately.</p></div><div class="chart-legend"><span><i class="key movement"></i> Movement</span><span><i class="key sound"></i> Sound</span></div></div>
+          <div class="chart-wrap"><canvas id="activityChart" aria-label="Coarse room movement and sound activity over time"></canvas><div id="chartEmpty">Optional room-level signals appear here during a session.</div></div>
+          <p class="chart-note">These signals do not measure attention, emotion, learning, or individual engagement.</p>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">04 / LOCAL INSIGHT AGENT</span><h2>Ideas for the room</h2></div><span class="agent-icon">✳</span></div>
+          <p class="muted">Explainable prompts from recent activity and attendance. You decide what fits.</p>
+          <div id="insightsList" class="insights"><div class="insight"><i>↗</i><div><b>Start with a check-in</b><p>Begin a session to collect local room-level signals and attendance.</p></div></div></div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="kicker">05 / SESSION HISTORY</span><h2>Recent sessions</h2></div><span class="history-label">LOCAL RECORDS</span></div>
+          <div id="historyList" class="history"><p class="muted">Completed session summaries will appear here.</p></div>
+        </article>
+      </section>
+    </section>
+  </main>
+  <footer><span>Classroom Signal / Local-first classroom support</span><span>Attendance is an aid to verify, not an automated decision.</span><button id="footerPrivacy">Privacy &amp; method</button></footer>
+</div>
+<dialog id="privacyDialog" class="dialog"><button class="close" id="closePrivacy" aria-label="Close">×</button><span class="kicker">PRIVACY / METHOD</span><h2>Useful context, without surveillance.</h2><p><b>Attendance:</b> learners check in with a locally generated QR badge. Check-in duration is recorded; instructors should verify the list.</p><p><b>Room signals:</b> optional camera processing scans QR codes and computes broad frame-to-frame movement. Optional audio processing keeps only short-term volume levels. Raw video and audio are never stored or transmitted.</p><p><b>Limits:</b> movement and sound are not measures of attention, emotion, comprehension, or individual engagement. The local insight agent uses visible rules and offers suggestions only.</p><p><b>Storage:</b> roster, attendance, and coarse session summaries stay in a local SQLite database. No cloud connection is made.</p><button class="primary" id="donePrivacy">Understood</button></dialog>
+<dialog id="qrDialog" class="dialog qr-dialog"><button class="close" id="closeQr" aria-label="Close">×</button><span class="kicker">LOCAL QR BADGE</span><h2 id="qrName">Participant badge</h2><img id="qrImage" alt="Private locally generated check-in QR code"><p>Show this code to the session camera in the selected check-in mode.</p></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
