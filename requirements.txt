@@ -1,0 +1,5 @@
+Flask>=3.0,<4
+numpy>=1.24,<3
+opencv-python>=4.8,<5
+sounddevice>=0.4.6,<1
+qrcode[pil]>=7.4,<9
